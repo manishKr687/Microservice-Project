@@ -11,9 +11,8 @@ import java.util.List;
 @Table(name="micro_users")
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="ID")
-    private Long userId;
+    private String userId;
     @Column(name="NAME")
     private String name;
     @Column(name="EMAIL")
