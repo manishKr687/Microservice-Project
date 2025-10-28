@@ -1,7 +1,7 @@
 package com.lcdw.rating.services.impl;
 
 import com.lcdw.rating.entities.Rating;
-import com.lcdw.rating.repositries.RatingRepository;
+import com.lcdw.rating.repositories.RatingRepository;
 import com.lcdw.rating.services.RatingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,12 +23,12 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public List<Rating> getRatingsByUserId(String userId) {
-        return ratingRepository.findRatingByUserId(userId);
+        return ratingRepository.findByUserId(userId);
     }
 
     @Override
     public List<Rating> getRatingByHotelId(String hotelId) {
-        return ratingRepository.findRatingByHotelId(hotelId);
+        return ratingRepository.findByHotelId(hotelId);
     }
 
 }
