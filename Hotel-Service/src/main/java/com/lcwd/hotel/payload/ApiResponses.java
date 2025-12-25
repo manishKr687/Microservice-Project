@@ -1,7 +1,6 @@
 package com.lcwd.hotel.payload;
 
 import lombok.*;
-import org.springframework.http.HttpStatus;
 
 @Setter
 @Getter
@@ -11,5 +10,5 @@ import org.springframework.http.HttpStatus;
 public class ApiResponses {
     private String message;
     private boolean success;
-    private HttpStatus status;
+    private Integer status;
 }
