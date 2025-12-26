@@ -6,5 +6,6 @@ import java.util.List;
 public interface RatingRepository extends JpaRepository<Rating,String> {
     List<Rating> findByUserId(String userId);
     List<Rating> findByHotelId(String hotelId);
+    List<Rating> findByHotelIdIn(List<String> hotelIds);
 
 }

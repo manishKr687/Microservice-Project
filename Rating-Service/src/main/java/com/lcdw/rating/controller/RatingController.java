@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -26,8 +27,9 @@ public class RatingController {
     public ResponseEntity<List<Rating>> getRatingsByUser(@PathVariable String userId) {
         return ResponseEntity.ok(ratingService.getRatingsByUserId(userId));
     }
-    @GetMapping("/hotels/{hotelId}")
-    public ResponseEntity<List<Rating>> getRatingByHotel(@PathVariable String hotelId){
-        return ResponseEntity.ok(ratingService.getRatingByHotelId(hotelId));
+    @GetMapping("/hotel")
+    public ResponseEntity<List<Rating>> getRatingByHotel(@RequestParam(required = true) String ids){
+        List<String> hotelIds = Arrays.asList(ids.split(","));
+        return ResponseEntity.ok(ratingService.getRatingsByHotelIds(hotelIds));
     }
 }

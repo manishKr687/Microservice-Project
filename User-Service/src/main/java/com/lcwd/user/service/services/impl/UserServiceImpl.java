@@ -13,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,15 +43,26 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Not Found " + userId));
 
-        // Fetch ratings for the user (cache per user)
+        // Fetch ratings for the user
         List<Rating> ratings = getUserRatings(userId);
 
-        // Fetch hotel details for each rating (cache per hotel)
-        List<Rating> ratingList = ratings.stream().map(rating -> {
-            Hotel hotel = getHotelById(rating.getHotelId());
-            rating.setHotel(hotel);
-            return rating;
-        }).collect(Collectors.toList());
+        // Get all unique hotel IDs from the ratings
+        String hotelIds = ratings.stream()
+                .map(Rating::getHotelId)
+                .distinct()
+                .collect(Collectors.joining(","));
+
+        // Fetch all hotels in a single batch call
+        List<Hotel> hotels = getHotelsByIds(hotelIds);
+
+        // Create a map of hotels for quick lookup
+        Map<String, Hotel> hotelMap = hotels.stream()
+                .collect(Collectors.toMap(Hotel::getHotelId, hotel -> hotel));
+
+        // Set the hotel for each rating
+        List<Rating> ratingList = ratings.stream().peek(rating ->
+                rating.setHotel(hotelMap.get(rating.getHotelId()))
+        ).collect(Collectors.toList());
 
         user.setRatings(ratingList);
         return user;
@@ -71,7 +83,15 @@ public class UserServiceImpl implements UserService {
     /**
      * Cached method to get hotel details from Hotel-Service
      */
-    @Cacheable(value = "hotels", key = "#hotelId")
+    @Cacheable(value = "hotels", key = "#hotelIds")
+    public List<Hotel> getHotelsByIds(String hotelIds) {
+        Hotel[] hotels = restTemplate.getForObject(
+                "http://HOTEL-SERVICE/hotels?ids=" + hotelIds,
+                Hotel[].class
+        );
+        return Arrays.asList(hotels);
+    }
+
     public Hotel getHotelById(String hotelId) {
         return restTemplate.getForObject(
                 "http://HOTEL-SERVICE/hotels/" + hotelId,

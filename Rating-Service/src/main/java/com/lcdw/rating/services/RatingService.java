@@ -9,4 +9,5 @@ public interface RatingService {
     Rating saveRating(Rating rating);
     List<Rating> getRatingsByUserId(String userId);
     List<Rating> getRatingByHotelId(String hotelId);
+    List<Rating> getRatingsByHotelIds(List<String> hotelIds);
 }

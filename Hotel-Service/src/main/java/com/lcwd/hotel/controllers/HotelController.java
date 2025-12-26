@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -31,8 +32,14 @@ public class HotelController {
 
     //Get All Hotels
     @GetMapping
-    public ResponseEntity<List<Hotel>> getAllHotel(){
-        List<Hotel> allHotels= hotelService.getAllHotel();
-        return ResponseEntity.ok(allHotels);
+    public ResponseEntity<?> getAllHotel(@RequestParam(required = false) String ids){
+        if (ids != null && !ids.trim().isEmpty()) {
+            List<String> hotelIds = Arrays.asList(ids.split(","));
+            List<Hotel> hotels = hotelService.getAllHotelsByIds(hotelIds);
+            return ResponseEntity.ok(hotels);
+        } else {
+            List<Hotel> allHotels = hotelService.getAllHotel();
+            return ResponseEntity.ok(allHotels);
+        }
     }
 }
