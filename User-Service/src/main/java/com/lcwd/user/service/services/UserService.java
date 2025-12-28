@@ -1,25 +1,22 @@
 package com.lcwd.user.service.services;
 
+import com.lcwd.user.service.dtos.UserDto;
 import com.lcwd.user.service.entities.Hotel;
 import com.lcwd.user.service.entities.Rating;
-import com.lcwd.user.service.entities.User;
 
 import java.util.List;
 
 public interface UserService {
 
     //Create
-    User saveUser(User user);
+    UserDto saveUser(UserDto userDto);
 
     //Get All User
-    List<User> getAllUser();
+    List<UserDto> getAllUser();
 
-    User getUser(String userId);
+    UserDto getUser(String userId);
+
     List<Rating> getUserRatings(String userId);
+
     Hotel getHotelById(String hotelId);
-
-
-
-
-
 }

@@ -1,11 +1,13 @@
 package com.lcwd.user.service.entities;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class Rating {
-    private String userId;
     private String ratingId;
+    private String userId;
     private String hotelId;
     private int rating;
     private String feedback;

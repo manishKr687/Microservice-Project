@@ -1,17 +1,13 @@
 package com.lcwd.user.service.entities;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Setter
 public class Hotel {
-
-    private String hotelId;
+    private String id;
     private String name;
     private String location;
     private String about;
-
 }

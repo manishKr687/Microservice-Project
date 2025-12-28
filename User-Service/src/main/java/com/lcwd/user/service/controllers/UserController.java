@@ -1,6 +1,6 @@
 package com.lcwd.user.service.controllers;
 
-import com.lcwd.user.service.entities.User;
+import com.lcwd.user.service.dtos.UserDto;
 import com.lcwd.user.service.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,22 +16,20 @@ public class UserController {
     private UserService userService;
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user){
-        User user1= userService.saveUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(user1);
+    public ResponseEntity<UserDto> createUser(@RequestBody UserDto userDto){
+        UserDto userDto1 = userService.saveUser(userDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userDto1);
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<User> getSingleUser(@PathVariable String userId){
-        User user = userService.getUser(userId);
-        return ResponseEntity.ok(user);
+    public ResponseEntity<UserDto> getSingleUser(@PathVariable String userId){
+        UserDto userDto = userService.getUser(userId);
+        return ResponseEntity.ok(userDto);
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUser(){
-        List<User> allUsers= userService.getAllUser();
+    public ResponseEntity<List<UserDto>> getAllUser(){
+        List<UserDto> allUsers = userService.getAllUser();
         return ResponseEntity.ok(allUsers);
     }
-
-
 }

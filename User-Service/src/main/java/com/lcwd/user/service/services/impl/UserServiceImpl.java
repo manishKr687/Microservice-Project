@@ -1,17 +1,21 @@
 package com.lcwd.user.service.services.impl;
 
+import com.lcwd.user.service.dtos.UserDto;
 import com.lcwd.user.service.entities.Hotel;
 import com.lcwd.user.service.entities.Rating;
 import com.lcwd.user.service.entities.User;
 import com.lcwd.user.service.exceptions.ResourceNotFoundException;
 import com.lcwd.user.service.repositories.UserRepository;
 import com.lcwd.user.service.services.UserService;
+import com.lcwd.user.service.external.services.HotelService;
+import com.lcwd.user.service.external.services.RatingService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,28 +27,39 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private RestTemplate restTemplate;
+    private HotelService hotelService;
+
+    @Autowired
+    private RatingService ratingService;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
     @Override
-    public User saveUser(User user) {
-        return userRepository.save(user);
+    public UserDto saveUser(UserDto userDto) {
+        User user = modelMapper.map(userDto, User.class);
+        User savedUser = userRepository.save(user);
+        return modelMapper.map(savedUser, UserDto.class);
     }
 
+
     @Override
-    public List<User> getAllUser() {
-        return userRepository.findAll();
+    public List<UserDto> getAllUser() {
+        return userRepository.findAll().stream()
+                .map(user -> modelMapper.map(user, UserDto.class))
+                .collect(Collectors.toList());
     }
 
     /**
      * Fetch a single user with ratings and hotels
      */
     @Override
-    public User getUser(String userId) {
+    public UserDto getUser(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Not Found " + userId));
 
         // Fetch ratings for the user
-        List<Rating> ratings = getUserRatings(userId);
+        List<Rating> ratings = ratingService.getRatings(userId);
 
         // Get all unique hotel IDs from the ratings
         String hotelIds = ratings.stream()
@@ -53,11 +68,11 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.joining(","));
 
         // Fetch all hotels in a single batch call
-        List<Hotel> hotels = getHotelsByIds(hotelIds);
+        List<Hotel> hotels = hotelService.getHotelsByIds(hotelIds);
 
         // Create a map of hotels for quick lookup
         Map<String, Hotel> hotelMap = hotels.stream()
-                .collect(Collectors.toMap(Hotel::getHotelId, hotel -> hotel));
+                .collect(Collectors.toMap(Hotel::getId, hotel -> hotel));
 
         // Set the hotel for each rating
         List<Rating> ratingList = ratings.stream().peek(rating ->
@@ -65,37 +80,41 @@ public class UserServiceImpl implements UserService {
         ).collect(Collectors.toList());
 
         user.setRatings(ratingList);
-        return user;
+        return modelMapper.map(user, UserDto.class);
     }
 
     /**
      * Cached method to get user ratings from Rating-Service
      */
     @Cacheable(value = "ratings", key = "#userId")
+    @CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod = "getUserRatingsFallback")
     public List<Rating> getUserRatings(String userId) {
-        Rating[] userRatings = restTemplate.getForObject(
-                "http://RATING-SERVICE/ratings/users/" + userId,
-                Rating[].class
-        );
-        return Arrays.asList(userRatings);
+        return ratingService.getRatings(userId);
+    }
+
+    public List<Rating> getUserRatingsFallback(String userId, Exception ex) {
+        return new ArrayList<>();
     }
 
     /**
      * Cached method to get hotel details from Hotel-Service
      */
     @Cacheable(value = "hotels", key = "#hotelIds")
+    @CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod = "getHotelsByIdsFallback")
     public List<Hotel> getHotelsByIds(String hotelIds) {
-        Hotel[] hotels = restTemplate.getForObject(
-                "http://HOTEL-SERVICE/hotels?ids=" + hotelIds,
-                Hotel[].class
-        );
-        return Arrays.asList(hotels);
+        return hotelService.getHotelsByIds(hotelIds);
     }
 
+    public List<Hotel> getHotelsByIdsFallback(String hotelIds, Exception ex) {
+        return new ArrayList<>();
+    }
+
+    @CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod = "getHotelByIdFallback")
     public Hotel getHotelById(String hotelId) {
-        return restTemplate.getForObject(
-                "http://HOTEL-SERVICE/hotels/" + hotelId,
-                Hotel.class
-        );
+        return hotelService.getHotel(hotelId);
+    }
+
+    public Hotel getHotelByIdFallback(String hotelId, Exception ex) {
+        return new Hotel("0", "None", "None", "None");
     }
 }
